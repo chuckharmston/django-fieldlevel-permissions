@@ -8,8 +8,8 @@ class FieldLevelAdmin(admin.ModelAdmin):
     """
     A subclass of ModelAdmin that provides hooks for setting field-level 
     permissions based on object or request properties. Intended to be used as an 
-    abstract base class replacement for ModelAdmin, with can_view_inline() and 
-    can_view_field() customized to each use.
+    abstract base class replacement for ModelAdmin, with can_change_inline() and 
+    can_change_field() customized to each use.
     """
     
     def get_fieldsets(self, request, obj=None):
@@ -32,7 +32,7 @@ class FieldLevelAdmin(admin.ModelAdmin):
         # permission to view
         for fieldset in fieldsets:
             fieldset[1]['fields'] = [field for field in fieldset[1]['fields'] \
-                if self.can_view_field(request, obj, field)]
+                if self.can_change_field(request, obj, field)]
         
         # Delete empty fieldsets
         for fieldset in fieldsets:
@@ -50,7 +50,7 @@ class FieldLevelAdmin(admin.ModelAdmin):
         
         # Remove the fields that the user does not have permission to view.
         for field_name, field in form.base_fields.items():
-            if not self.can_view_field(request, obj, field_name):
+            if not self.can_change_field(request, obj, field_name):
                 del form.base_fields[field_name]
         
         # Because inlines live outside of the normal flow of fields (i.e. are
@@ -58,20 +58,20 @@ class FieldLevelAdmin(admin.ModelAdmin):
         # separately.
         self.inline_instances = []
         for inline_class in self.inlines:
-            if(self.can_view_inline(request, obj, inline_class.__name__)):
+            if(self.can_change_inline(request, obj, inline_class.__name__)):
                 inline_instance = inline_class(self.model, self)
                 self.inline_instances.append(inline_instance)
         
         return form
     
-    def can_view_inline(self, request, obj, inline_name):
+    def can_change_inline(self, request, obj, inline_name):
         """
         Returns boolean indicating whether the user has necessary permissions to
         view the passed inline.
         """
         return True
     
-    def can_view_field(self, request, obj, field_name):
+    def can_change_field(self, request, obj, field_name):
         """
         Returns boolean indicating whether the user has necessary permissions to
         view the passed field.
