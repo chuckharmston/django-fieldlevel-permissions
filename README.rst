@@ -21,6 +21,8 @@ Usage
 =====
 In your admin classes, inherit from ``fieldlevel.admin.FieldLevelAdmin`` rather than ``django.contrib.admin.ModelAdmin``. This provides you with two overridable methods, ``can_change_field`` and ``can_change_inline``, each of which have access to the request and the object being edited, and should return a boolean indicating whether or not the user should see the field in the admin.
 
+It is important to note that any potentially hidden fields must be ``blank=True``, have a default set, or must have handling code in a `custom save method <http://docs.djangoproject.com/en/dev/topics/db/models/#overriding-predefined-model-methods>`_.
+ 
 In the following example, we will demonstrate this by modifying these Models and ModelAdmin to achieve a few tasks:
 
 1. Only superusers will be able to modify the post and comment dates
@@ -35,9 +37,9 @@ In the following example, we will demonstrate this by modifying these Models and
     from django.contrib.auth.models import User
     
     class BlogPost(models.Model):
-        title = models.CharField(maxlength=128)
+        title = models.CharField(max_length=128)
         text = models.TextField()
-        post_date = models.DateField()
+        post_date = models.DateField(blank=True)
         author = models.ForeignKey(User)
         
         class Meta:
@@ -50,12 +52,12 @@ In the following example, we will demonstrate this by modifying these Models and
         blogpost = models.ForeignKey(BlogPost)
         author = models.ForeignKey(User)
         text = models.TextField()
-        comment_date = models.DateField()
+        comment_date = models.DateField(blank=True)
         approved = models.BooleanField(default=False)
         
         class Meta:
             permissions = (
-                ("can_approve_comments", "Can edit meta tags"),
+                ("can_approve_comments", "Can approve comments"),
             )
     
     # admin.py
@@ -158,6 +160,8 @@ Finally, we'll only allow users with appropriate permissions to edit blog post m
             if inline_name == 'MetaTagInline':
                 if not request.user.has_perm('blog.can_edit_meta'):
                     return False
+            
+            return True
 
 That's it! Our final admin.py::
 
@@ -182,7 +186,10 @@ That's it! Our final admin.py::
             return True
     
     class BlogPostAdmin(FieldLevelAdmin):
-        
+        inlines = [
+            MetaTagInline,
+        ]
+
         def can_change_field(self, request, obj, field_name):
             
             if field_name == "post_date":
@@ -196,6 +203,8 @@ That's it! Our final admin.py::
             if inline_name == 'MetaTagInline':
                 if not request.user.has_perm('blog.can_edit_meta'):
                     return False
+            
+            return True
     
     admin.site.register(BlogPost, BlogPostAdmin)
     admin.site.register(Comment, CommentAdmin)
