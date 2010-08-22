@@ -25,7 +25,7 @@ class FieldLevelAdmin(admin.ModelAdmin):
             form = self.get_form(request, obj)
             fieldsets = form.base_fields.keys() + \
                 list(self.get_readonly_fields(request, obj))
-        fieldsets = super(PageAdmin, self).get_fieldsets(request, obj=obj)
+        fieldsets = super(FieldLevelAdmin, self).get_fieldsets(request, obj=obj)
         fieldsets = deepcopy(fieldsets)
         
         # Delete all fields in fieldsets that the request does not have
@@ -46,7 +46,7 @@ class FieldLevelAdmin(admin.ModelAdmin):
         Returns a Form class (used by add_view and change_view) modified to only 
         include fields and inlines that the user has permissions to view.
         """
-        form = super(PageAdmin, self).get_form(request, obj)
+        form = super(FieldLevelAdmin, self).get_form(request, obj)
         
         # Remove the fields that the user does not have permission to view.
         for field_name, field in form.base_fields.items():
